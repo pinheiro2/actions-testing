@@ -1,34 +1,31 @@
-name: Harden Runner audit (heavy files)
+name: Harden Runner File Tampering
 
 on: workflow_dispatch
 
 jobs:
-  build:
+  simulate-attack:
     runs-on: ubuntu-22.04
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        uses: step-security/harden-runner@v2
         with:
           egress-policy: audit
 
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Simulate Suspicious File Activity
+      - name: Simulate Source Code Tampering
         run: |
-          # 1. Create a dummy source file
-          mkdir -p src
-          echo "console.log('Normal application code');" > src/app.js
+          # 1. Identify a file tracked by git (we assume README.md exists)
+          # If README.md doesn't exist, this creates it so the next command counts as an overwrite
+          if [ ! -f README.md ]; then echo "Initial Content" > README.md; fi
+
+          # 2. OVERWRITE the file
+          # Harden Runner flags this because a build script is modifying source code
+          echo "MALICIOUS INJECTION: stealing_creds()" > README.md
           
-          # 2. SIMULATE INJECTION: Append 'malicious' code to the source file
-          # This triggers a "File Modification" event on tracked source code
-          echo "eval('steal_credentials()'); // Malicious Injection" >> src/app.js
-          
-          # 3. SIMULATE DROPPER: Create a hidden script and make it executable
-          # This triggers "File Creation" and "chmod" (permission change) events
-          echo "#!/bin/bash\necho 'Mining crypto...'" > .hidden_miner.sh
-          chmod +x .hidden_miner.sh
-          
-          # 4. SIMULATE EXFIL STAGING: Write to a sensitive-looking file
-          # This triggers a write event to a potentially sensitive path
-          echo "AWS_KEY=AKIA1234567890" > secrets.env
+          # 3. Modify a file in the .github folder (High Criticality)
+          # This often triggers high-priority alerts
+          if [ -d .github ]; then
+             echo "malicious: true" > .github/compromised.yml
+          fi
