@@ -1,0 +1,20 @@
+name: Harden Runner audit
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf
+        with:
+          egress-policy: audit
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Random workload
+        run: |
+          echo "Attempting to reach Wikipedia..."
+          curl -I https://www.wikipedia.org
