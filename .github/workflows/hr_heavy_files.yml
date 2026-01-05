@@ -1,4 +1,4 @@
-name: Harden Runner audit
+name: Harden Runner audit (heavy files)
 
 on: workflow_dispatch
 
